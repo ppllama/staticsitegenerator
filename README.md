@@ -1,0 +1,2 @@
+# staticsitegenerator
+boot.dev project
