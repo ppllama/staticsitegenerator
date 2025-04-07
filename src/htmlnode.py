@@ -28,7 +28,7 @@ class LeafNode(HTMLNode):
     
     def to_html(self):
         if self.value is None:
-            raise ValueError()
+            raise ValueError("Leafs must have value")
         if self.tag is None:
             return f"{self.value}"
         if not self.props:
@@ -36,3 +36,29 @@ class LeafNode(HTMLNode):
             return f"<{self.tag}>{self.value}</{self.tag}>"
         else:
             return f"<{self.tag}{self.props_to_html()}>{self.value}</{self.tag}>"
+        
+class ParentNode(HTMLNode):
+    def __init__(self, tag, children, props=None):
+        super().__init__(tag=tag, value=None, children=children, props=props)
+    
+    def to_html(self):
+        if not self.tag:
+            raise ValueError("parents must have tag")
+        if not self.children:
+            raise ValueError("Parents must have children")
+        else:
+            children_copy = self.children.copy()
+            string_of_children = ""
+            def joiner(children_copy):
+                nonlocal string_of_children
+                if not children_copy:
+                    return string_of_children
+                else:
+                    string_of_children += (children_copy.pop(0).to_html())
+                return joiner(children_copy)
+            
+            if not self.props:
+            # Self Note: This catches both None and empty dict
+                return f"<{self.tag}>{joiner(children_copy)}</{self.tag}>"
+            else:
+                return f"<{self.tag}{self.props_to_html()}>{joiner(children_copy)}</{self.tag}>"
