@@ -1,5 +1,5 @@
 from textnode import *
-import os, shutil
+import os, shutil, sys
 from pathlib import Path
 
 from block_markdown import (
@@ -7,17 +7,21 @@ from block_markdown import (
     extract_title
 )
 
+basepath = "/"
+if len(sys.argv) > 1:
+    basepath = sys.argv[1]
+
 
 def main():
     copy_to_public()
     from_path = "content"
     template_path = "template.html"
-    dest_path = "public"
-    generate_pages_recursive(from_path, template_path, dest_path)
+    dest_path = "docs"
+    generate_pages_recursive(from_path, template_path, dest_path, basepath)
 
 def copy_to_public():
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    public_dir = os.path.join(script_dir, "../public")
+    public_dir = os.path.join(script_dir, "../docs")
     static_dir = os.path.join(script_dir, "../static")
 
     if os.path.exists(public_dir):
@@ -39,7 +43,7 @@ def copy_to_public():
     
     copier(static_dir,public_dir)
 
-def generate_page(from_path, template_path, dest_path):
+def generate_page(from_path, template_path, dest_path, basepath):
     print(f"Generating page from {from_path} to {dest_path} using {template_path}")
     with open(from_path, 'r') as md_file:
         markdown = md_file.read()
@@ -49,12 +53,14 @@ def generate_page(from_path, template_path, dest_path):
     title = extract_title(markdown)
     template = template.replace("{{ Title }}", title)
     template = template.replace("{{ Content }}", html)
+    template = template.replace('href="/', f'href="{basepath}')
+    template = template.replace('src="/', f'src="{basepath}')
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
     with open(dest_path, 'w') as output_file:
         output_file.write(template)
 
 
-def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, basepath):
     print(f"Generating website from {dir_path_content} to {dest_dir_path} using {template_path}")
     dir_path_content = Path(dir_path_content)
     dest_dir_path = Path(dest_dir_path)
@@ -68,13 +74,13 @@ def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
             if source_path.suffix == ".md":
                 print(f"making and copying html: {source_path}")
                 dest_path = dest_path.with_suffix(".html")
-                generate_page(source_path, template_path, dest_path)
+                generate_page(source_path, template_path, dest_path,basepath)
             else:
                 print(f"Skipping invalid file format: {source_path}")
                 continue
         elif source_path.is_dir():
             print(f"copying directory: {source_path}")
             os.makedirs(dest_path, exist_ok=True)
-            generate_pages_recursive(source_path, template_path, dest_path)
+            generate_pages_recursive(source_path, template_path, dest_path, basepath)
 
 main()
